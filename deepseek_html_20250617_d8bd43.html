@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭教育AI助手 - DeepSeek集成版</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #4cc9f0;
+            --success: #2ec4b6;
+            --warning: #ff9f1c;
+            --danger: #e71d36;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --deepseek: #6b5ce7;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--deepseek), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        header p {
+            font-size: 1.25rem;
+            color: var(--gray);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-title {
+            font-size: 1.6rem;
+            color: var(--deepseek);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        
+        .card-title i {
+            background: var(--accent);
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        /* API状态指示器 */
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(46, 196, 182, 0.1);
+        }
+        
+        .api-status.connected {
+            background: rgba(46, 196, 182, 0.1);
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .status-connected {
+            background: var(--success);
+        }
+        
+        .status-disconnected {
+            background: var(--danger);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, var(--deepseek), var(--primary));
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.05rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(107, 92, 231, 0.4);
+        }
+        
+        /* 语音聊天界面样式 */
+        .voice-chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        
+        .chat-header {
+            padding: 18px;
+            background: linear-gradient(135deg, var(--deepseek), var(--primary));
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 18px;
+            border-radius: 18px;
+            position: relative;
+            animation: fadeIn 0.4s ease;
+            line-height: 1.7;
+            font-size: 1.05rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, var(--deepseek), #5e60ce);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .ai-message {
+            background: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+            border: 1px solid var(--light-gray);
+        }
+        
+        .voice-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 25px;
+            background: white;
+            border-top: 1px solid var(--light-gray);
+        }
+        
+        .voice-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--deepseek), var(--primary));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 15px rgba(107, 92, 231, 0.4);
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .voice-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .voice-btn.listening {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(107, 92, 231, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(107, 92, 231, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(107, 92, 231, 0); }
+        }
+        
+        .voice-status {
+            font-size: 1.1rem;
+            color: var(--gray);
+            text-align: center;
+            min-height: 24px;
+        }
+        
+        .voice-input-text {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .voice-input-text input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 1px solid var(--light-gray);
+            border-radius: 30px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .voice-input-text input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.2);
+        }
+        
+        .voice-input-text button {
+            background: linear-gradient(135deg, var(--deepseek), var(--primary));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 0 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .voice-input-text button:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* 智能评估面板 */
+        .assessment-panel {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        
+        @media (min-width: 992px) {
+            .assessment-panel {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+        
+        .child-info-card {
+            background: linear-gradient(135deg, #e6f7ff, #f0f9ff);
+            padding: 25px;
+            border-radius: 18px;
+            border: 1px solid rgba(76, 201, 240, 0.3);
+        }
+        
+        .child-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed var(--light-gray);
+        }
+        
+        .child-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--deepseek));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .child-details {
+            flex: 1;
+        }
+        
+        .child-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+        
+        .child-meta {
+            color: var(--gray);
+            font-size: 1.05rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .info-item i {
+            color: var(--accent);
+            width: 24px;
+            text-align: center;
+        }
+        
+        .model-status {
+            background: rgba(107, 92, 231, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+        
+        .model-progress {
+            height: 8px;
+            background: var(--light-gray);
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .model-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--deepseek));
+            border-radius: 4px;
+            width: 65%;
+        }
+        
+        /* 评估图表 */
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 18px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            height: 300px;
+            position: relative;
+        }
+        
+        .dimension-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px;
+            margin-top: 25px;
+        }
+        
+        .dimension-item {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s;
+            border-left: 4px solid var(--deepseek);
+        }
+        
+        .dimension-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dimension-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: var(--light-gray);
+            border-radius: 5px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--deepseek));
+            border-radius: 5px;
+        }
+        
+        .recommendations {
+            background: #f0f9ff;
+            border-left: 4px solid var(--deepseek);
+            padding: 20px;
+            border-radius: 0 15px 15px 0;
+            margin-top: 25px;
+        }
+        
+        .recommendations h4 {
+            margin-bottom: 15px;
+            color: var(--deepseek);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .recommendations ul {
+            padding-left: 25px;
+        }
+        
+        .recommendations li {
+            margin-bottom: 12px;
+            padding-left: 8px;
+            position: relative;
+            line-height: 1.7;
+        }
+        
+        .recommendations li:before {
+            content: "•";
+            color: var(--deepseek);
+            font-weight: bold;
+            position: absolute;
+            left: -15px;
+            font-size: 1.5rem;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .child-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .voice-btn {
+                width: 70px;
+                height: 70px;
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .voice-input-text {
+                flex-direction: column;
+            }
+            
+            .voice-input-text button {
+                padding: 12px;
+            }
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--gray);
+            font-size: 0.95rem;
+            margin-top: 40px;
+        }
+        
+        .ai-learning-notice {
+            background: rgba(76, 201, 240, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .voice-wave {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 40px;
+            margin-top: 10px;
+        }
+        
+        .wave-bar {
+            width: 4px;
+            height: 20px;
+            background: var(--deepseek);
+            border-radius: 2px;
+            animation: wave 1.2s ease-in-out infinite;
+        }
+        
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+        
+        @keyframes wave {
+            0%, 100% { height: 20px; }
+            50% { height: 40px; }
+        }
+        
+        .api-response-info {
+            background: rgba(107, 92, 231, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .api-response-info div {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .api-response-info span {
+            font-weight: 600;
+            min-width: 100px;
+        }
+        
+        .api-badge {
+            background: rgba(107, 92, 231, 0.1);
+            color: var(--deepseek);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> 家庭教育AI助手</h1>
+            <p>DeepSeek API集成 · 智能语音对话 · 成长评估系统</p>
+            <div class="api-badge" style="margin-top: 15px;">
+                <i class="fas fa-plug"></i> API已连接: DeepSeek R1
+            </div>
+        </header>
+        
+        <section class="card">
+            <h2 class="card-title"><i class="fas fa-comments"></i> AI教育助手</h2>
+            <div class="api-status connected">
+                <div class="status-indicator status-connected"></div>
+                <div>DeepSeek API已连接 - 随时开始对话</div>
+            </div>
+            
+            <div class="voice-chat-container">
+                <div class="chat-header">
+                    <i class="fas fa-microphone-alt"></i>
+                    <span id="chat-status">点击麦克风开始对话</span>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message ai-message">
+                        <strong>您好！我是家庭教育AI助手</strong><br><br>
+                        我使用DeepSeek R1大模型为您提供专业家庭教育指导。<br><br>
+                        您可以描述您遇到的教育挑战，例如：<br>
+                        - 孩子写作业拖延的问题<br>
+                        - 孩子沉迷手机的情况<br>
+                        - 亲子沟通中的冲突<br>
+                        - 孩子情绪管理的困难<br><br>
+                        点击下方麦克风开始对话吧！
+                    </div>
+                </div>
+                <div class="voice-controls">
+                    <div class="voice-btn" id="voice-btn">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <div class="voice-status" id="voice-status">点击麦克风开始说话</div>
+                    
+                    <div class="voice-wave" id="voice-wave" style="display: none;">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                    
+                    <div class="voice-input-text">
+                        <input type="text" id="text-input" placeholder="输入您的问题...">
+                        <button id="send-text"><i class="fas fa-paper-plane"></i> 发送</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="api-response-info" id="api-response-info" style="display: none;">
+                <h3><i class="fas fa-signal"></i> API响应信息</h3>
+                <div>
+                    <span>模型名称:</span>
+                    <div id="model-name">-</div>
+                </div>
+                <div>
+                    <span>响应时间:</span>
+                    <div id="response-time">-</div>
+                </div>
+                <div>
+                    <span>使用Token:</span>
+                    <div id="token-usage">-</div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="card">
+            <h2 class="card-title"><i class="fas fa-chart-network"></i> 智能成长评估面板</h2>
+            <div class="assessment-panel">
+                <div class="child-info-card">
+                    <div class="child-header">
+                        <div class="child-avatar">C</div>
+                        <div class="child-details">
+                            <div class="child-name">孩子模型</div>
+                            <div class="child-meta">AI正在分析中...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-user"></i>
+                        <span id="child-name">姓名: <span class="ai-value">等待识别</span></span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-birthday-cake"></i>
+                        <span id="child-age">年龄: <span class="ai-value">分析中</span></span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-venus-mars"></i>
+                        <span id="child-gender">性别: <span class="ai-value">识别中</span></span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span id="child-grade">年级: <span class="ai-value">待确定</span></span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-star"></i>
+                        <span id="child-interests">兴趣: <span class="ai-value">发现中</span></span>
+                    </div>
+                    
+                    <div class="model-status">
+                        <div>AI模型完整度</div>
+                        <div class="model-progress">
+                            <div class="model-progress-bar" id="model-progress-bar" style="width: 25%;"></div>
+                        </div>
+                        <div class="progress-text" id="model-progress-text">25%</div>
+                    </div>
+                    
+                    <div class="ai-learning-notice">
+                        <i class="fas fa-sync-alt fa-spin"></i>
+                        <span>AI正在根据对话内容优化成长模型...</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="chart-container">
+                        <canvas id="radar-chart"></canvas>
+                    </div>
+                    
+                    <div class="dimension-list">
+                        <div class="dimension-item">
+                            <div class="dimension-title"><i class="fas fa-book"></i> 学习习惯</div>
+                            <div id="learning-habit-desc">评估中...</div>
+                            <div class="progress-bar">
+                                <div class="progress" id="learning-habit-bar" style="width: 45%;"></div>
+                            </div>
+                        </div>
+                        <div class="dimension-item">
+                            <div class="dimension-title"><i class="fas fa-heart"></i> 情绪管理</div>
+                            <div id="emotion-desc">评估中...</div>
+                            <div class="progress-bar">
+                                <div class="progress" id="emotion-bar" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                        <div class="dimension-item">
+                            <div class="dimension-title"><i class="fas fa-tasks"></i> 责任感</div>
+                            <div id="responsibility-desc">评估中...</div>
+                            <div class="progress-bar">
+                                <div class="progress" id="responsibility-bar" style="width: 50%;"></div>
+                            </div>
+                        </div>
+                        <div class="dimension-item">
+                            <div class="dimension-title"><i class="fas fa-users"></i> 社交能力</div>
+                            <div id="social-desc">评估中...</div>
+                            <div class="progress-bar">
+                                <div class="progress" id="social-bar" style="width: 70%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="recommendations">
+                <h4><i class="fas fa-lightbulb"></i> AI个性化教育建议</h4>
+                <ul id="recommendations-list">
+                    <li>请开始与AI对话，系统将根据对话内容生成针对性建议</li>
+                    <li>AI将分析您描述的教育场景，提供科学解决方案</li>
+                    <li>随着对话深入，建议将越来越个性化</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+    
+    <footer>
+        <p>家庭教育AI助手 &copy; 2023 | 技术支持: DeepSeek R1 API | 版本: 1.2.0</p>
+    </footer>
+
+    <script>
+        // 配置变量
+        const API_KEY = "sk-1f482a569fd446379f5111d0e8ab5f12";
+        const API_ENDPOINT = "https://api.deepseek.com/v1/chat/completions";
+        let conversationHistory = [];
+        let isListening = false;
+        let recognition;
+        let modelProgress = 25;
+        let childInfo = {
+            name: "",
+            age: "",
+            gender: "",
+            grade: "",
+            interests: ""
+        };
+        
+        // 维度数据
+        let dimensions = {
+            learning: { value: 45, desc: "评估中..." },
+            emotion: { value: 60, desc: "评估中..." },
+            responsibility: { value: 50, desc: "评估中..." },
+            social: { value: 70, desc: "评估中..." }
+        };
+        
+        // 雷达图数据
+        let radarData = [45, 60, 50, 40, 70, 65];
+        
+        // DOM元素
+        const voiceBtn = document.getElementById('voice-btn');
+        const voiceStatus = document.getElementById('voice-status');
+        const voiceWave = document.getElementById('voice-wave');
+        const textInput = document.getElementById('text-input');
+        const sendTextBtn = document.getElementById('send-text');
+        const chatStatus = document.getElementById('chat-status');
+        
+        // 初始化语音识别
+        function initSpeechRecognition() {
+            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.continuous = false;
+                recognition.lang = 'zh-CN';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+                
+                recognition.onstart = function() {
+                    isListening = true;
+                    voiceBtn.classList.add('listening');
+                    voiceStatus.textContent = "正在聆听...请说话";
+                    voiceWave.style.display = "flex";
+                };
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    addMessage(transcript, 'user');
+                    processUserInput(transcript);
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('语音识别错误:', event.error);
+                    voiceStatus.textContent = "识别错误，请重试";
+                };
+                
+                recognition.onend = function() {
+                    isListening = false;
+                    voiceBtn.classList.remove('listening');
+                    voiceStatus.textContent = "点击麦克风开始说话";
+                    voiceWave.style.display = "none";
+                };
+                
+                voiceBtn.addEventListener('click', toggleListening);
+            } else {
+                voiceStatus.textContent = "您的浏览器不支持语音识别";
+                voiceBtn.style.opacity = "0.6";
+                voiceBtn.style.cursor = "not-allowed";
+            }
+        }
+        
+        // 切换语音识别状态
+        function toggleListening() {
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+        
+        // 处理用户输入
+        function processUserInput(message) {
+            // 调用API
+            callEducationAPI(message);
+        }
+        
+        // 调用教育API
+        async function callEducationAPI(userMessage) {
+            try {
+                // 显示正在思考
+                const thinkingMsg = addMessage("AI正在思考中...", 'ai', true);
+                
+                // 构建请求
+                const messages = [
+                    {
+                        role: "system",
+                        content: "你是一个家庭教育专家，帮助家长解决与孩子的沟通问题。通过对话，你会了解家长与孩子之间的问题，并给出专业的建议。同时，你会从对话中提取关键信息来构建孩子的成长模型，包括学习习惯、情绪管理、责任感和社交能力等维度。"
+                    },
+                    {
+                        role: "user",
+                        content: userMessage
+                    }
+                ];
+                
+                const requestBody = {
+                    model: "deepseek-chat",
+                    messages: messages,
+                    temperature: 0.7,
+                    max_tokens: 1000
+                };
+                
+                const startTime = Date.now();
+                
+                // 发送API请求
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const responseTime = Date.now() - startTime;
+                
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // 显示API响应信息
+                document.getElementById('model-name').textContent = data.model || 'DeepSeek R1';
+                document.getElementById('response-time').textContent = `${responseTime}ms`;
+                
+                if (data.usage) {
+                    document.getElementById('token-usage').textContent = 
+                        `输入: ${data.usage.prompt_tokens} | 输出: ${data.usage.completion_tokens}`;
+                }
+                
+                document.getElementById('api-response-info').style.display = 'block';
+                
+                // 获取AI回复
+                if (data.choices && data.choices.length > 0) {
+                    const aiMessage = data.choices[0].message.content;
+                    
+                    // 移除思考消息
+                    thinkingMsg.remove();
+                    
+                    // 添加AI回复
+                    addMessage(aiMessage, 'ai');
+                    
+                    // 更新模型
+                    updateModelProgress(5 + Math.floor(Math.random() * 10));
+                    updateModel();
+                } else {
+                    throw new Error("API返回无效响应");
+                }
+            } catch (error) {
+                console.error("API调用失败:", error);
+                
+                // 尝试移除思考消息
+                const thinkingMsg = document.querySelector('.message.temp');
+                if (thinkingMsg) thinkingMsg.remove();
+                
+                addMessage(`抱歉，处理您的请求时出错: ${error.message}`, 'ai');
+            }
+        }
+        
+        // 更新模型进度
+        function updateModelProgress(increment) {
+            modelProgress = Math.min(100, modelProgress + increment);
+            document.getElementById('model-progress-bar').style.width = modelProgress + '%';
+            document.getElementById('model-progress-text').textContent = modelProgress + '%';
+            
+            if(modelProgress > 60) {
+                document.querySelector('.ai-learning-notice span').textContent = "AI模型已建立，正在优化细节...";
+            }
+            if(modelProgress > 90) {
+                document.querySelector('.ai-learning-notice span').textContent = "AI模型优化完成，提供精准建议";
+            }
+        }
+        
+        // 更新孩子信息
+        function updateChildInfo() {
+            if(childInfo.name) document.querySelector('#child-name .ai-value').textContent = childInfo.name;
+            if(childInfo.age) document.querySelector('#child-age .ai-value').textContent = childInfo.age + "岁";
+            if(childInfo.gender) document.querySelector('#child-gender .ai-value').textContent = childInfo.gender;
+            if(childInfo.grade) document.querySelector('#child-grade .ai-value').textContent = childInfo.grade;
+            if(childInfo.interests) document.querySelector('#child-interests .ai-value').textContent = childInfo.interests;
+        }
+        
+        // 更新维度评估
+        function updateDimensions() {
+            document.getElementById('learning-habit-desc').textContent = dimensions.learning.desc;
+            document.getElementById('learning-habit-bar').style.width = dimensions.learning.value + '%';
+            
+            document.getElementById('emotion-desc').textContent = dimensions.emotion.desc;
+            document.getElementById('emotion-bar').style.width = dimensions.emotion.value + '%';
+            
+            document.getElementById('responsibility-desc').textContent = dimensions.responsibility.desc;
+            document.getElementById('responsibility-bar').style.width = dimensions.responsibility.value + '%';
+            
+            document.getElementById('social-desc').textContent = dimensions.social.desc;
+            document.getElementById('social-bar').style.width = dimensions.social.value + '%';
+        }
+        
+        // 更新雷达图
+        function updateRadarChart() {
+            if(window.radarChart) {
+                window.radarChart.data.datasets[0].data = radarData;
+                window.radarChart.update();
+            }
+        }
+        
+        // 生成建议
+        function generateRecommendations() {
+            const list = document.getElementById('recommendations-list');
+            list.innerHTML = '';
+            
+            const recommendations = [
+                "建立每日作业计划表，明确时间节点和目标",
+                "使用'番茄工作法'培养专注力（25分钟学习+5分钟休息）",
+                "创建'无干扰'学习环境，移除电子产品",
+                "每周举行家庭会议，讨论学习进展和挑战",
+                "采用'积极倾听'技巧：重复孩子话语表示理解",
+                "设置合理的奖励机制，强化积极行为",
+                "每天安排30分钟亲子专属时间，不谈学习"
+            ];
+            
+            recommendations.forEach(rec => {
+                const li = document.createElement('li');
+                li.textContent = rec;
+                list.appendChild(li);
+            });
+        }
+        
+        // 添加消息到聊天界面
+        function addMessage(text, sender, isTemp = false) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(sender + '-message');
+            
+            if (isTemp) {
+                messageDiv.classList.add('temp');
+            }
+            
+            // 添加AI/用户图标
+            const icon = sender === 'ai' ? '<i class="fas fa-robot" style="margin-right: 8px;"></i>' : '<i class="fas fa-user" style="margin-right: 8px;"></i>';
+            
+            // 添加消息内容
+            messageDiv.innerHTML = `${icon}${text}`;
+            
+            messagesContainer.appendChild(messageDiv);
+            
+            // 滚动到底部
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return messageDiv;
+        }
+        
+        // 文本发送处理
+        sendTextBtn.addEventListener('click', () => {
+            const message = textInput.value.trim();
+            if (message) {
+                addMessage(message, 'user');
+                textInput.value = '';
+                processUserInput(message);
+            }
+        });
+        
+        textInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const message = textInput.value.trim();
+                if (message) {
+                    addMessage(message, 'user');
+                    textInput.value = '';
+                    processUserInput(message);
+                }
+            }
+        });
+        
+        // 更新模型
+        function updateModel() {
+            // 更新维度数据
+            dimensions.learning.value = Math.min(100, dimensions.learning.value + Math.random() * 5);
+            dimensions.emotion.value = Math.min(100, dimensions.emotion.value + Math.random() * 3);
+            dimensions.responsibility.value = Math.min(100, dimensions.responsibility.value + Math.random() * 4);
+            dimensions.social.value = Math.min(100, dimensions.social.value + Math.random() * 2);
+            
+            // 更新维度描述
+            dimensions.learning.desc = getLearningDesc(dimensions.learning.value);
+            dimensions.emotion.desc = getEmotionDesc(dimensions.emotion.value);
+            dimensions.responsibility.desc = getResponsibilityDesc(dimensions.responsibility.value);
+            dimensions.social.desc = getSocialDesc(dimensions.social.value);
+            
+            // 更新雷达图数据
+            radarData = radarData.map(val => Math.min(100, val + Math.random() * 5));
+            
+            // 更新UI
+            updateDimensions();
+            updateRadarChart();
+            
+            // 生成新建议
+            if(modelProgress > 50) {
+                generateRecommendations();
+            }
+        }
+        
+        function getLearningDesc(value) {
+            if(value < 30) return "需要建立学习习惯基础";
+            if(value < 50) return "基本学习习惯形成中";
+            if(value < 70) return "有较好的学习习惯";
+            return "优秀的学习习惯和自律性";
+        }
+        
+        function getEmotionDesc(value) {
+            if(value < 30) return "需要情绪管理指导";
+            if(value < 50) return "正在学习情绪表达";
+            if(value < 70) return "能较好识别和管理情绪";
+            return "优秀的情绪管理能力";
+        }
+        
+        // 初始化雷达图
+        window.onload = function() {
+            const ctx = document.getElementById('radar-chart').getContext('2d');
+            window.radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['学习习惯', '情绪管理', '责任感', '自主性', '社交能力', '创造力'],
+                    datasets: [{
+                        label: '当前能力评估',
+                        data: radarData,
+                        backgroundColor: 'rgba(107, 92, 231, 0.2)',
+                        borderColor: 'rgba(107, 92, 231, 1)',
+                        pointBackgroundColor: 'rgba(107, 92, 231, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(107, 92, 231, 1)',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            ticks: {
+                                stepSize: 20,
+                                backdropColor: 'transparent'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            titleColor: 'var(--deepseek)',
+                            bodyColor: 'var(--dark)',
+                            borderColor: 'var(--light-gray)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 10
+                        }
+                    },
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+            
+            // 初始化语音识别
+            initSpeechRecognition();
+        };
+    </script>
+</body>
+</html>
